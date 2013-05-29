@@ -269,8 +269,8 @@ class TestGroup(object):
     def _run(self, test, progress):
         path = os.path.join(self.tests_directory, test)
         chmod_x(path)
-        tmpdir1 = tempfile.mkdtemp(prefix='sadt')
-        tmpdir2 = tempfile.mkdtemp(prefix='sadt')
+        tmpdir1 = tempfile.mkdtemp(prefix='sadt.')
+        tmpdir2 = tempfile.mkdtemp(prefix='sadt.')
         environ = dict(os.environ)
         environ['ADTTMP'] = tmpdir1
         environ['TMPDIR'] = tmpdir2 # only for compatiblity with old DEP-8 spec.
