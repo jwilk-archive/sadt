@@ -20,6 +20,7 @@ simple DEP-8 test runner
 '''
 
 import argparse
+import errno
 import gettext
 import os
 import queue as queuemod
@@ -320,7 +321,7 @@ class TestGroup(object):
 
 def copy_build_tree():
     rw_build_tree = tempfile.mkdtemp(prefix='sadt-rwbt.')
-    print('Info: copying build tree to {tree}'.format(tree=rw_build_tree), file=sys.stderr)
+    print('sadt: info: copying build tree to {tree}'.format(tree=rw_build_tree), file=sys.stderr)
     ipc.check_call(['cp', '-a', '.', rw_build_tree])
     return rw_build_tree
 
@@ -336,14 +337,28 @@ def main():
     options.tests = frozenset(options.tests)
     options.ignore_restrictions = frozenset(options.ignore_restrictions.split(','))
     binary_packages = set()
-    with open('debian/control', encoding='UTF-8') as file:
+    try:
+        file = open('debian/control', encoding='UTF-8')
+    except IOError as exc:
+        if exc.errno == errno.ENOENT:
+            print('sadt: error: cannot find debian/control', file=sys.stderr)
+            sys.exit(1)
+        raise
+    with file:
         for n, para in enumerate(deb822.Packages.iter_paragraphs(file)):
             if n == 0:
                 para['Source']
             else:
                 binary_packages.add(para['Package'])
     test_groups = []
-    with open('debian/tests/control', encoding='UTF-8') as file:
+    try:
+        file = open('debian/tests/control', encoding='UTF-8')
+    except IOError as exc:
+        if exc.errno == errno.ENOENT:
+            print('sadt: error: cannot find debian/tests/control', file=sys.stderr)
+            sys.exit(1)
+        raise
+    with file:
         for para in deb822.Packages.iter_paragraphs(file):
             group = TestGroup()
             for key, value in para.items():
@@ -351,7 +366,7 @@ def main():
                 try:
                     method = getattr(group, 'add_' + key)
                 except AttributeError:
-                    print('Warning: Unknown field {field}, skipping the whole paragraph'.format(field=key), file=sys.stderr)
+                    print('sadt: warning: unknown field {field}, skipping the whole paragraph'.format(field=key), file=sys.stderr)
                     group = None
                     break
                 method(value)
