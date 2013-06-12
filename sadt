@@ -228,7 +228,8 @@ class TestGroup(object):
         exc = None
         try:
             self.check_restrictions(ignored_restrictions)
-        except RwBuildTreeNeeded as exc:
+        except RwBuildTreeNeeded as e:
+            exc = e
             # this will be handled separately
             pass
         self.check_depends()
