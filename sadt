@@ -173,7 +173,19 @@ class TestGroup(object):
         if '@' not in self.depends:
             return
         or_clauses = []
-        for or_clause in deb822.PkgRelation.parse_relations(self.depends):
+        # deb822 prints a warning on stderr: http://bugs.debian.org/712513
+        # We don't want the user to see the warning, because the unusual
+        # character in the relation is intentional.
+        orig_sys_stderr = sys.stderr
+        sys.stderr = open(os.devnull, 'wt', errors='ignore')
+        try:
+            parsed_depends = deb822.PkgRelation.parse_relations(self.depends)
+        finally:
+            try:
+                sys.stderr.close()
+            finally:
+                sys.stderr = orig_sys_stderr
+        for or_clause in parsed_depends:
             stripped_or_clause = [r for r in or_clause if r['name'] != '@']
             if len(stripped_or_clause) < len(or_clause):
                 for package in packages:
