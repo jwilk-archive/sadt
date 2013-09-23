@@ -363,9 +363,9 @@ def main():
         for para in deb822.Packages.iter_paragraphs(file):
             group = TestGroup()
             for key, value in para.items():
-                key = key.lower()
+                lkey = key.lower().replace('-', '_')
                 try:
-                    method = getattr(group, 'add_' + key)
+                    method = getattr(group, 'add_' + lkey)
                 except AttributeError:
                     print('sadt: warning: unknown field {field}, skipping the whole paragraph'.format(field=key), file=sys.stderr)
                     group = None
