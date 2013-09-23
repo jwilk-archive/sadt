@@ -78,9 +78,6 @@ def annotate_output(child):
 class Skip(Exception):
     pass
 
-class RwBuildTreeNeeded(Skip):
-    pass
-
 class Fail(Exception):
     pass
 
@@ -220,10 +217,11 @@ class TestGroup(object):
 
     def check_restrictions(self, ignored_restrictions):
         restrictions = self.restrictions - frozenset(ignored_restrictions)
+        class options:
+            rw_build_tree_needed = False
         for r in restrictions:
             if r == 'rw-build-tree':
-                # This will be handled separately
-                continue
+                options.needs_rw_build_tree = True
             elif r == 'needs-root':
                 if os.getuid() != 0:
                     raise Skip('this test needs root privileges')
@@ -233,21 +231,12 @@ class TestGroup(object):
                 raise Skip('source tree not built')
             else:
                 raise Skip('unknown restriction: {restr}'.format(restr=r))
-        if 'rw-build-tree' in restrictions:
-            # This will be handled separately
-            raise RwBuildTreeNeeded
+        return options
 
     def check(self, ignored_restrictions=()):
-        exc = None
-        try:
-            self.check_restrictions(ignored_restrictions)
-        except RwBuildTreeNeeded as e:
-            exc = e
-            # this will be handled separately
-            pass
+        options = self.check_restrictions(ignored_restrictions)
         self.check_depends()
-        if exc is not None:
-            raise exc
+        return options
 
     def run(self, test, progress, ignored_restrictions=(), rw_build_tree=None, built_source_tree=None):
         progress.start(test)
@@ -397,12 +386,13 @@ def main():
                 try:
                     if rw_build_tree is None:
                         try:
-                            group.check()
-                        except RwBuildTreeNeeded:
-                            rw_build_tree = copy_build_tree()
-                            assert rw_build_tree is not None
+                            group_options = group.check()
                         except Skip:
                             pass
+                        else:
+                            if group_options.rw_build_tree_needed:
+                                rw_build_tree = copy_build_tree()
+                                assert rw_build_tree is not None
                     group.run(name,
                         progress=progress,
                         ignored_restrictions=options.ignore_restrictions,
