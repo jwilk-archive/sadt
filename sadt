@@ -104,7 +104,7 @@ class Progress(object):
         self._write(self._back + hourglass[c % len(hourglass)])
         self._counter = c
 
-    def start(self):
+    def start(self, name):
         pass
 
     def skip(self, reason):
