@@ -195,7 +195,6 @@ class TestGroup(object):
         self.depends = deb822.PkgRelation.str(or_clauses)
 
     def check_depends(self):
-        assert '@' not in self.depends
         if self._check_depends_cache is not None:
             if isinstance(self._depends_cache, Exception):
                 raise self._check_depends_cache
